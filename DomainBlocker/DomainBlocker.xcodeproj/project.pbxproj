@@ -276,7 +276,7 @@
                 ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
                 CODE_SIGN_STYLE = Manual;
                 CURRENT_PROJECT_VERSION = 1;
-                DEVELOPMENT_TEAM = "";
+                DEVELOPMENT_TEAM = "V22J5U2YDA";
                 CODE_SIGN_IDENTITY = "";
                 CODE_SIGNING_REQUIRED = NO;
                 CODE_SIGNING_ALLOWED = NO;
@@ -297,6 +297,7 @@
                 SWIFT_EMIT_LOC_STRINGS = YES;
                 SWIFT_VERSION = 5.0;
                 TARGETED_DEVICE_FAMILY = "1,2";
+                SWIFT_INCLUDE_PATHS = "$(SDKROOT)/usr/lib/swift";
             };
             name = Debug;
         };
@@ -307,7 +308,7 @@
                 ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
                 CODE_SIGN_STYLE = Manual;
                 CURRENT_PROJECT_VERSION = 1;
-                DEVELOPMENT_TEAM = "";
+                DEVELOPMENT_TEAM = "V22J5U2YDA";
                 CODE_SIGN_IDENTITY = "";
                 CODE_SIGNING_REQUIRED = NO;
                 CODE_SIGNING_ALLOWED = NO;
@@ -328,6 +329,7 @@
                 SWIFT_EMIT_LOC_STRINGS = YES;
                 SWIFT_VERSION = 5.0;
                 TARGETED_DEVICE_FAMILY = "1,2";
+                SWIFT_INCLUDE_PATHS = "$(SDKROOT)/usr/lib/swift";
             };
             name = Release;
         };

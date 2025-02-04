@@ -16,37 +16,9 @@ jobs:
     - name: Select Xcode
       run: sudo xcode-select -switch /Applications/Xcode.app
       
-    - name: Create exportOptions.plist
-      run: |
-        cd DomainBlocker
-        cat > exportOptions.plist << EOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>method</key>
-            <string>development</string>
-            <key>compileBitcode</key>
-            <false/>
-            <key>stripSwiftSymbols</key>
-            <false/>
-            <key>thinning</key>
-            <string>&lt;none&gt;</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-        </dict>
-        </plist>
-        EOF
-      
     - name: Build
       run: |
         cd DomainBlocker
-        
-        # 创建临时证书
-        security create-keychain -p github_actions build.keychain
-        security default-keychain -s build.keychain
-        security unlock-keychain -p github_actions build.keychain
-        security set-keychain-settings -t 3600 -u build.keychain
         
         # 构建项目
         xcodebuild clean archive \
@@ -60,46 +32,38 @@ jobs:
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO \
           PROVISIONING_PROFILE_SPECIFIER="" \
+          DEVELOPMENT_TEAM="V22J5U2YDA" \
           ENABLE_BITCODE=NO \
           COPY_PHASE_STRIP=NO \
           STRIP_INSTALLED_PRODUCT=NO \
           STRIP_SWIFT_SYMBOLS=NO \
-          DEBUG_INFORMATION_FORMAT="dwarf-with-dsym" \
-          OTHER_CODE_SIGN_FLAGS="--timestamp=none"
+          DEBUG_INFORMATION_FORMAT="dwarf-with-dsym"
         
-        # 导出 IPA
-        xcodebuild -exportArchive \
-          -archivePath build/DomainBlocker.xcarchive \
-          -exportPath build \
-          -exportOptionsPlist exportOptions.plist \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
-        
-        # 解压 IPA 以添加必要的文件
-        cd build
-        unzip DomainBlocker.ipa
-        rm DomainBlocker.ipa
-        
-        # 添加必要的框架
-        mkdir -p Payload/DomainBlocker.app/Frameworks
+        # 准备 IPA 文件结构
+        cd build/DomainBlocker.xcarchive/Products/Applications/
+        mkdir -p Payload
+        cp -R DomainBlocker.app Payload/
         
         # 复制 Swift 运行时
         SWIFT_LIBS_PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
-        for lib in libswift_Concurrency.dylib libswift_Foundation.dylib libswift_os.dylib libswift_CoreFoundation.dylib libswift_Darwin.dylib libswiftCore.dylib libswiftUIKit.dylib; do
+        mkdir -p Payload/DomainBlocker.app/Frameworks
+        for lib in libswiftCore.dylib libswiftUIKit.dylib libswiftFoundation.dylib libswiftCoreFoundation.dylib libswiftDispatch.dylib libswiftObjectiveC.dylib libswiftDarwin.dylib libswiftCoreGraphics.dylib libswiftQuartzCore.dylib; do
           if [ -f "$SWIFT_LIBS_PATH/$lib" ]; then
             cp "$SWIFT_LIBS_PATH/$lib" Payload/DomainBlocker.app/Frameworks/
           fi
         done
         
-        # 设置正确的文件权限
+        # 设置文件权限
         chmod -R 755 Payload
         find Payload -type f -exec chmod 644 {} \;
         find Payload -type d -exec chmod 755 {} \;
         
-        # 重新打包
+        # 创建 IPA
         zip -qry DomainBlocker.ipa Payload
+        mv DomainBlocker.ipa ../../
+        cd ../../
         
-        # 显示文件结构
+        # 显示 IPA 内容
         echo "IPA contents:"
         unzip -l DomainBlocker.ipa
       
