@@ -26,7 +26,7 @@ jobs:
           -scheme DomainBlocker \
           -configuration Release \
           -sdk iphoneos \
-          -archivePath build/DomainBlocker.xcarchive \
+          -archivePath $PWD/build/DomainBlocker.xcarchive \
           CODE_SIGN_STYLE=Manual \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
@@ -60,12 +60,19 @@ jobs:
         
         # 创建 IPA
         zip -qry DomainBlocker.ipa Payload
-        mv DomainBlocker.ipa ../../
-        cd ../../
+        
+        # 移动 IPA 到正确的位置
+        mkdir -p ../../../../build
+        mv DomainBlocker.ipa ../../../../build/
+        cd ../../../../
         
         # 显示 IPA 内容
         echo "IPA contents:"
-        unzip -l DomainBlocker.ipa
+        unzip -l build/DomainBlocker.ipa
+        
+        # 显示构建目录内容
+        echo "Build directory contents:"
+        ls -la build/
       
     - name: Upload IPA
       uses: actions/upload-artifact@v4
