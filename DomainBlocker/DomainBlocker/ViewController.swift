@@ -55,26 +55,6 @@ class ViewController: UIViewController {
         // 请求 VPN 权限
         let vpnManager = NEVPNManager.shared()
         
-        // 首先检查网络扩展权限
-        NEVPNManager.loadAllFromPreferences { _, error in
-            if let error = error as? NEVPNError {
-                switch error.code {
-                case .configurationInvalid:
-                    self.requestVPNPermissions()
-                case .configurationDisabled:
-                    self.showAlert(message: "请在设置中启用VPN配置")
-                default:
-                    self.showAlert(message: "VPN配置错误: \(error.localizedDescription)")
-                }
-                return
-            }
-            
-            // 如果没有错误，继续加载配置
-            self.loadVPNConfiguration()
-        }
-    }
-    
-    private func loadVPNConfiguration() {
         vpnManager.loadFromPreferences { [weak self] error in
             if let error = error {
                 self?.showAlert(message: "加载VPN配置失败: \(error.localizedDescription)")
@@ -82,7 +62,7 @@ class ViewController: UIViewController {
             }
             
             // 检查连接状态
-            let status = vpnManager.connection.status
+            let status = self?.vpnManager.connection.status
             if status == .invalid {
                 self?.requestVPNPermissions()
             }
@@ -103,6 +83,14 @@ class ViewController: UIViewController {
         vpnManager.saveToPreferences { [weak self] error in
             if let error = error {
                 self?.showAlert(message: "请求VPN权限失败: \(error.localizedDescription)")
+                return
+            }
+            
+            // 尝试启动 VPN 以触发权限请求
+            do {
+                try vpnManager.connection.startVPNTunnel()
+            } catch {
+                self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
             }
         }
     }
