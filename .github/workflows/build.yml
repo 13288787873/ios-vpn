@@ -25,15 +25,15 @@ jobs:
         <plist version="1.0">
         <dict>
             <key>method</key>
-            <string>development</string>
+            <string>enterprise</string>
             <key>teamID</key>
             <string>V22J5U2YDA</string>
-            <key>signingStyle</key>
-            <string>manual</string>
             <key>compileBitcode</key>
             <false/>
             <key>stripSwiftSymbols</key>
             <true/>
+            <key>thinning</key>
+            <string>&lt;none&gt;</string>
         </dict>
         </plist>
         EOF
@@ -43,7 +43,8 @@ jobs:
         cd DomainBlocker
         mkdir -p build
         
-        xcodebuild \
+        # 构建项目
+        xcodebuild clean archive \
           -project DomainBlocker.xcodeproj \
           -scheme DomainBlocker \
           -configuration Release \
@@ -55,17 +56,13 @@ jobs:
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO \
-          PROVISIONING_PROFILE_SPECIFIER="" \
-          archive
+          PROVISIONING_PROFILE_SPECIFIER=""
           
+        # 导出IPA
         xcodebuild -exportArchive \
           -archivePath $PWD/build/DomainBlocker.xcarchive \
           -exportPath $PWD/build \
-          -exportOptionsPlist exportOptions.plist \
-          DEVELOPMENT_TEAM="V22J5U2YDA" \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+          -exportOptionsPlist exportOptions.plist
       
     - name: Upload IPA
       uses: actions/upload-artifact@v4
