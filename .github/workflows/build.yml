@@ -16,11 +16,48 @@ jobs:
     - name: Select Xcode
       run: sudo xcode-select -switch /Applications/Xcode.app
       
+    - name: Create Xcode Project
+      run: |
+        cd DomainBlocker
+        # 创建新的 Xcode 项目
+        xcodebuild -create-xcodeproj \
+          -target DomainBlocker \
+          -configuration Release \
+          -xcodeproj DomainBlocker.xcodeproj
+        
+        # 创建 exportOptions.plist
+        cat > exportOptions.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>teamID</key>
+            <string>YOUR_TEAM_ID</string>
+            <key>compileBitcode</key>
+            <false/>
+        </dict>
+        </plist>
+        EOF
+      
     - name: Build
       run: |
         cd DomainBlocker
-        xcodebuild -scheme DomainBlocker -configuration Release -sdk iphoneos -archivePath $PWD/build/DomainBlocker.xcarchive archive
-        xcodebuild -exportArchive -archivePath $PWD/build/DomainBlocker.xcarchive -exportPath $PWD/build -exportOptionsPlist exportOptions.plist
+        # 添加所有源文件到项目
+        find . -name "*.swift" -exec xcodebuild -project DomainBlocker.xcodeproj -target DomainBlocker -configuration Release -sdk iphoneos SWIFT_VERSION=5.0 {} +
+        
+        # 构建项目
+        xcodebuild -project DomainBlocker.xcodeproj \
+          -scheme DomainBlocker \
+          -configuration Release \
+          -sdk iphoneos \
+          -archivePath $PWD/build/DomainBlocker.xcarchive archive
+          
+        xcodebuild -exportArchive \
+          -archivePath $PWD/build/DomainBlocker.xcarchive \
+          -exportPath $PWD/build \
+          -exportOptionsPlist exportOptions.plist
       
     - name: Upload IPA
       uses: actions/upload-artifact@v4
