@@ -1,0 +1,29 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Select Xcode
+      run: sudo xcode-select -switch /Applications/Xcode.app
+      
+    - name: Build
+      run: |
+        cd DomainBlocker
+        xcodebuild -scheme DomainBlocker -configuration Release -sdk iphoneos -archivePath $PWD/build/DomainBlocker.xcarchive archive
+        xcodebuild -exportArchive -archivePath $PWD/build/DomainBlocker.xcarchive -exportPath $PWD/build -exportOptionsPlist exportOptions.plist
+      
+    - name: Upload IPA
+      uses: actions/upload-artifact@v2
+      with:
+        name: app
+        path: DomainBlocker/build/*.ipa 
