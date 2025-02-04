@@ -78,12 +78,27 @@ class ViewController: UIViewController {
         vpnProtocol.remoteIdentifier = "VPN_IDENTIFIER"
         vpnProtocol.serverAddress = "VPN_SERVER"
         
-        let rule = NEOnDemandRuleConnect()
-        rule.dnsSearchDomains = blockedDomains
+        // 创建DNS规则
+        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1"]) // 使用Cloudflare DNS
+        dnsSettings.matchDomains = blockedDomains
         
+        // 创建网络规则
+        let rule = NEOnDemandRuleConnect()
+        rule.interfaceTypeMatch = .any
+        
+        // 配置VPN
+        let vpnManager = NEVPNManager.shared()
         vpnManager.protocolConfiguration = vpnProtocol
         vpnManager.onDemandRules = [rule]
         vpnManager.isEnabled = true
+        
+        // 设置DNS
+        if let tunnelProtocol = vpnManager.protocolConfiguration as? NETunnelProviderProtocol {
+            tunnelProtocol.providerConfiguration = [
+                "dns": dnsSettings.servers,
+                "blockedDomains": blockedDomains
+            ]
+        }
         
         vpnManager.saveToPreferences { [weak self] error in
             if let error = error {
@@ -91,7 +106,13 @@ class ViewController: UIViewController {
                 return
             }
             
-            self?.showAlert(message: "域名屏蔽规则已更新")
+            // 启动VPN
+            do {
+                try vpnManager.connection.startVPNTunnel()
+                self?.showAlert(message: "域名屏蔽规则已更新并启动")
+            } catch {
+                self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
+            }
         }
     }
     
