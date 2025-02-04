@@ -50,14 +50,28 @@ jobs:
         # 复制应用和所有资源
         cp -R DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app Payload/
         
-        # 确保包含所有必要的框架和资源
+        # 创建必要的目录和文件
+        mkdir -p Payload/DomainBlocker.app/_CodeSignature
         mkdir -p Payload/DomainBlocker.app/Frameworks
-        cp -R DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app/Frameworks/* Payload/DomainBlocker.app/Frameworks/ 2>/dev/null || true
+        mkdir -p Payload/DomainBlocker.app/PlugIns
+        mkdir -p Payload/DomainBlocker.app/Watch
         
-        # 复制 Swift 运行时
+        # 复制 Swift 运行时库
         SWIFT_LIBS_PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
-        mkdir -p Payload/DomainBlocker.app/Frameworks
-        cp -R "$SWIFT_LIBS_PATH"/*.dylib Payload/DomainBlocker.app/Frameworks/ 2>/dev/null || true
+        for lib in libswift_Concurrency.dylib libswift_Foundation.dylib libswift_os.dylib libswift_CoreFoundation.dylib libswift_Darwin.dylib; do
+          if [ -f "$SWIFT_LIBS_PATH/$lib" ]; then
+            cp "$SWIFT_LIBS_PATH/$lib" Payload/DomainBlocker.app/Frameworks/
+          fi
+        done
+        
+        # 复制 NetworkExtension 相关框架
+        mkdir -p Payload/DomainBlocker.app/Frameworks/NetworkExtension.framework
+        if [ -d "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/NetworkExtension.framework" ]; then
+          cp -R "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/NetworkExtension.framework/" Payload/DomainBlocker.app/Frameworks/NetworkExtension.framework/
+        fi
+        
+        # 创建空的 CodeResources 文件
+        touch Payload/DomainBlocker.app/_CodeSignature/CodeResources
         
         # 确保文件权限正确
         chmod -R 755 Payload
@@ -68,7 +82,7 @@ jobs:
         echo "App bundle contents:"
         ls -la Payload/DomainBlocker.app/
         echo "Frameworks:"
-        ls -la Payload/DomainBlocker.app/Frameworks/ 2>/dev/null || echo "No frameworks directory"
+        ls -la Payload/DomainBlocker.app/Frameworks/
         
         # 创建 IPA
         rm -f DomainBlocker.ipa
