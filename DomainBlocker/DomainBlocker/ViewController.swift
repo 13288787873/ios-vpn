@@ -59,9 +59,6 @@ class ViewController: UIViewController {
         vpnProtocol.remoteIdentifier = "DomainBlocker"
         vpnProtocol.localIdentifier = "client"
         
-        // 配置 DNS 设置
-        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "1.0.0.1"])
-        
         // 创建 VPN Manager
         let manager = NEVPNManager.shared()
         manager.protocolConfiguration = vpnProtocol
@@ -176,5 +173,4 @@ class ViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "确定", style: .default))
         present(alert, animated: true)
     }
-} 
 } 
