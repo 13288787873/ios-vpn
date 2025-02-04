@@ -52,10 +52,44 @@ class ViewController: UIViewController {
     }
     
     private func setupVPNManager() {
+        // 请求 VPN 权限
+        let vpnManager = NEVPNManager.shared()
         vpnManager.loadFromPreferences { [weak self] error in
             if let error = error {
                 self?.showAlert(message: "加载VPN配置失败: \(error.localizedDescription)")
                 return
+            }
+            
+            // 检查 VPN 权限状态
+            NEVPNManager.loadAllFromPreferences { _, error in
+                if let error = error {
+                    self?.showAlert(message: "检查VPN权限失败: \(error.localizedDescription)")
+                    return
+                }
+                
+                // 请求授权
+                let status = NEVPNManager.shared().connection.status
+                if status == .invalid {
+                    self?.requestVPNPermissions()
+                }
+            }
+        }
+    }
+    
+    private func requestVPNPermissions() {
+        let vpnManager = NEVPNManager.shared()
+        
+        // 创建一个基本的 VPN 配置来触发权限请求
+        let vpnProtocol = NEVPNProtocolIKEv2()
+        vpnProtocol.username = "vpn"
+        vpnProtocol.serverAddress = "127.0.0.1"
+        
+        vpnManager.protocolConfiguration = vpnProtocol
+        vpnManager.isEnabled = true
+        
+        vpnManager.saveToPreferences { [weak self] error in
+            if let error = error {
+                self?.showAlert(message: "请求VPN权限失败: \(error.localizedDescription)")
             }
         }
     }
