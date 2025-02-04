@@ -74,44 +74,71 @@ class ViewController: UIViewController {
     }
     
     private func updateVPNConfiguration() {
-        let vpnProtocol = NEVPNProtocolIPSec()
-        vpnProtocol.remoteIdentifier = "VPN_IDENTIFIER"
-        vpnProtocol.serverAddress = "VPN_SERVER"
+        let vpnManager = NEVPNManager.shared()
         
-        // 创建DNS规则
-        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1"]) // 使用Cloudflare DNS
+        // 创建 VPN 协议配置
+        let vpnProtocol = NEVPNProtocolIKEv2()
+        vpnProtocol.username = "vpn"  // 使用一个默认用户名
+        vpnProtocol.passwordReference = nil  // 不使用密码
+        vpnProtocol.serverAddress = "127.0.0.1"  // 使用本地地址
+        vpnProtocol.remoteIdentifier = "DomainBlocker"
+        vpnProtocol.localIdentifier = "client"
+        vpnProtocol.useExtendedAuthentication = true
+        vpnProtocol.disconnectOnSleep = false
+        
+        // 配置 IKEv2 安全参数
+        vpnProtocol.ikeSecurityAssociationParameters.encryptionAlgorithm = .algorithmAES256GCM
+        vpnProtocol.ikeSecurityAssociationParameters.integrityAlgorithm = .SHA384
+        vpnProtocol.ikeSecurityAssociationParameters.diffieHellmanGroup = .group20
+        vpnProtocol.ikeSecurityAssociationParameters.lifetimeMinutes = 1440
+        
+        vpnProtocol.childSecurityAssociationParameters.encryptionAlgorithm = .algorithmAES256GCM
+        vpnProtocol.childSecurityAssociationParameters.integrityAlgorithm = .SHA384
+        vpnProtocol.childSecurityAssociationParameters.diffieHellmanGroup = .group20
+        vpnProtocol.childSecurityAssociationParameters.lifetimeMinutes = 1440
+        
+        // 配置 DNS 设置
+        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "1.0.0.1"])  // 使用 Cloudflare DNS
         dnsSettings.matchDomains = blockedDomains
         
-        // 创建网络规则
+        // 配置按需规则
         let rule = NEOnDemandRuleConnect()
         rule.interfaceTypeMatch = .any
         
-        // 配置VPN
-        let vpnManager = NEVPNManager.shared()
+        // 应用配置
         vpnManager.protocolConfiguration = vpnProtocol
         vpnManager.onDemandRules = [rule]
+        vpnManager.isOnDemandEnabled = true
         vpnManager.isEnabled = true
         
-        // 设置DNS
+        // 设置本地 DNS 代理
         if let tunnelProtocol = vpnManager.protocolConfiguration as? NETunnelProviderProtocol {
             tunnelProtocol.providerConfiguration = [
-                "dns": dnsSettings.servers,
+                "dns": ["1.1.1.1", "1.0.0.1"],
                 "blockedDomains": blockedDomains
             ]
         }
         
-        vpnManager.saveToPreferences { [weak self] error in
+        // 保存配置
+        vpnManager.loadFromPreferences { [weak self] error in
             if let error = error {
-                self?.showAlert(message: "保存VPN配置失败: \(error.localizedDescription)")
+                self?.showAlert(message: "加载VPN配置失败: \(error.localizedDescription)")
                 return
             }
             
-            // 启动VPN
-            do {
-                try vpnManager.connection.startVPNTunnel()
-                self?.showAlert(message: "域名屏蔽规则已更新并启动")
-            } catch {
-                self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
+            vpnManager.saveToPreferences { [weak self] error in
+                if let error = error {
+                    self?.showAlert(message: "保存VPN配置失败: \(error.localizedDescription)")
+                    return
+                }
+                
+                // 启动 VPN
+                do {
+                    try vpnManager.connection.startVPNTunnel()
+                    self?.showAlert(message: "域名屏蔽规则已更新并启动")
+                } catch {
+                    self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
+                }
             }
         }
     }
