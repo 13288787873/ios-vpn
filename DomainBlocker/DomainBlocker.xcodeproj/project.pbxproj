@@ -278,6 +278,9 @@
                 CURRENT_PROJECT_VERSION = 1;
                 DEVELOPMENT_TEAM = "V22J5U2YDA";
                 CODE_SIGN_ENTITLEMENTS = DomainBlocker/DomainBlocker.entitlements;
+                ENABLE_NETWORK_EXTENSION = YES;
+                SUPPORTS_MACCATALYST = NO;
+                ENABLE_HARDENED_RUNTIME = NO;
                 CODE_SIGN_IDENTITY = "";
                 CODE_SIGNING_REQUIRED = NO;
                 CODE_SIGNING_ALLOWED = NO;
@@ -311,6 +314,9 @@
                 CURRENT_PROJECT_VERSION = 1;
                 DEVELOPMENT_TEAM = "V22J5U2YDA";
                 CODE_SIGN_ENTITLEMENTS = DomainBlocker/DomainBlocker.entitlements;
+                ENABLE_NETWORK_EXTENSION = YES;
+                SUPPORTS_MACCATALYST = NO;
+                ENABLE_HARDENED_RUNTIME = NO;
                 CODE_SIGN_IDENTITY = "";
                 CODE_SIGNING_REQUIRED = NO;
                 CODE_SIGNING_ALLOWED = NO;

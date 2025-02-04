@@ -27,6 +27,8 @@
         <string>dns-proxy</string>
         <string>dns-settings</string>
         <string>personal-vpn</string>
+        <string>network-tunnel</string>
+        <string>vpn-tunnel</string>
     </array>
     <key>com.apple.developer.networking.vpn.api</key>
     <array>
@@ -43,6 +45,10 @@
     <array>
         <string>arm64</string>
         <string>personal-vpn</string>
+    </array>
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.HengTai.Meng.DomainBlocker</string>
     </array>
 </dict>
 </plist> 
