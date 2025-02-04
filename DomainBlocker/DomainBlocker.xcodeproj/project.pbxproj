@@ -254,6 +254,14 @@
                 STRIP_SWIFT_SYMBOLS = NO;
                 EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
                 ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+                FRAMEWORK_SEARCH_PATHS = (
+                    "$(inherited)",
+                    "$(SDKROOT)/System/Library/Frameworks",
+                );
+                LIBRARY_SEARCH_PATHS = (
+                    "$(inherited)",
+                    "$(SDKROOT)/usr/lib/swift",
+                );
                 LD_RUNPATH_SEARCH_PATHS = (
                     "$(inherited)",
                     "@executable_path/Frameworks",
