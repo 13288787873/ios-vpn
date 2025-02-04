@@ -25,9 +25,16 @@ jobs:
         <plist version="1.0">
         <dict>
             <key>method</key>
-            <string>development</string>
+            <string>ad-hoc</string>
+            <key>teamID</key>
+            <string>TEMP123456</string>
             <key>compileBitcode</key>
             <false/>
+            <key>provisioningProfiles</key>
+            <dict>
+                <key>com.example.DomainBlocker</key>
+                <string>DomainBlocker Ad Hoc</string>
+            </dict>
         </dict>
         </plist>
         EOF
@@ -45,6 +52,8 @@ jobs:
           -configuration Release \
           -sdk iphoneos \
           -archivePath $PWD/build/DomainBlocker.xcarchive \
+          DEVELOPMENT_TEAM="TEMP123456" \
+          PROVISIONING_PROFILE_SPECIFIER="" \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO \
@@ -55,6 +64,7 @@ jobs:
           -archivePath $PWD/build/DomainBlocker.xcarchive \
           -exportPath $PWD/build \
           -exportOptionsPlist exportOptions.plist \
+          DEVELOPMENT_TEAM="TEMP123456" \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO
