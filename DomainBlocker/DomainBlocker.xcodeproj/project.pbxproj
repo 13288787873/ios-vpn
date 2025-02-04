@@ -248,6 +248,10 @@
                 SDKROOT = iphoneos;
                 SWIFT_COMPILATION_MODE = wholemodule;
                 VALIDATE_PRODUCT = YES;
+                ENABLE_BITCODE = NO;
+                COPY_PHASE_STRIP = NO;
+                STRIP_INSTALLED_PRODUCT = NO;
+                STRIP_SWIFT_SYMBOLS = NO;
             };
             name = Release;
         };

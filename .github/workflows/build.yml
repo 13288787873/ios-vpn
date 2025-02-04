@@ -16,24 +16,6 @@ jobs:
     - name: Select Xcode
       run: sudo xcode-select -switch /Applications/Xcode.app
       
-    - name: Create exportOptions.plist
-      run: |
-        cd DomainBlocker
-        cat > exportOptions.plist << EOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>method</key>
-            <string>ad-hoc</string>
-            <key>compileBitcode</key>
-            <false/>
-            <key>stripSwiftSymbols</key>
-            <true/>
-        </dict>
-        </plist>
-        EOF
-      
     - name: Build
       run: |
         cd DomainBlocker
@@ -53,16 +35,26 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           PROVISIONING_PROFILE_SPECIFIER="" \
           SKIP_INSTALL=NO \
-          BUILD_LIBRARIES_FOR_DISTRIBUTION=YES
+          BUILD_LIBRARIES_FOR_DISTRIBUTION=YES \
+          ENABLE_BITCODE=NO \
+          COPY_PHASE_STRIP=NO \
+          STRIP_INSTALLED_PRODUCT=NO
           
-        # 创建空的配置文件
-        mkdir -p build/DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app/embedded.mobileprovision
-        
-        # 导出IPA
+        # 准备 IPA 文件结构
         cd build
-        mkdir Payload
+        rm -rf Payload
+        mkdir -p Payload
         cp -r DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app Payload/
-        zip -qr DomainBlocker.ipa Payload
+        
+        # 确保文件权限正确
+        chmod -R 755 Payload
+        
+        # 创建 IPA
+        rm -f DomainBlocker.ipa
+        zip -qry DomainBlocker.ipa Payload
+        
+        # 验证 IPA 结构
+        unzip -l DomainBlocker.ipa
       
     - name: Upload IPA
       uses: actions/upload-artifact@v4
