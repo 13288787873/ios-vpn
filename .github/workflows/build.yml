@@ -25,15 +25,11 @@ jobs:
         <plist version="1.0">
         <dict>
             <key>method</key>
-            <string>development</string>
-            <key>teamID</key>
-            <string>V22J5U2YDA</string>
+            <string>ad-hoc</string>
             <key>compileBitcode</key>
             <false/>
             <key>stripSwiftSymbols</key>
             <true/>
-            <key>signingStyle</key>
-            <string>automatic</string>
         </dict>
         </plist>
         EOF
@@ -51,20 +47,25 @@ jobs:
           -sdk iphoneos \
           -archivePath $PWD/build/DomainBlocker.xcarchive \
           PRODUCT_BUNDLE_IDENTIFIER="com.HengTai.Meng" \
-          DEVELOPMENT_TEAM="V22J5U2YDA" \
-          CODE_SIGN_STYLE=Automatic \
+          CODE_SIGN_STYLE=Manual \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          PROVISIONING_PROFILE_SPECIFIER="" \
           SKIP_INSTALL=NO \
           BUILD_LIBRARIES_FOR_DISTRIBUTION=YES
           
+        # 创建空的配置文件
+        mkdir -p build/DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app/embedded.mobileprovision
+        
         # 导出IPA
-        xcodebuild -exportArchive \
-          -archivePath $PWD/build/DomainBlocker.xcarchive \
-          -exportPath $PWD/build \
-          -exportOptionsPlist exportOptions.plist \
-          -allowProvisioningUpdates
+        cd build
+        mkdir Payload
+        cp -r DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app Payload/
+        zip -qr DomainBlocker.ipa Payload
       
     - name: Upload IPA
       uses: actions/upload-artifact@v4
       with:
         name: app
-        path: DomainBlocker/build/*.ipa 
+        path: DomainBlocker/build/DomainBlocker.ipa 
