@@ -52,45 +52,108 @@ class ViewController: UIViewController {
     }
     
     private func setupVPNManager() {
-        // 请求 VPN 权限
-        let vpnManager = NEVPNManager.shared()
+        // 创建一个基本的 VPN 配置
+        let vpnProtocol = NEVPNProtocolIKEv2()
+        vpnProtocol.username = "vpn"
+        vpnProtocol.serverAddress = "127.0.0.1"
+        vpnProtocol.remoteIdentifier = "DomainBlocker"
+        vpnProtocol.localIdentifier = "client"
         
-        vpnManager.loadFromPreferences { [weak self] error in
+        // 配置 DNS 设置
+        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "1.0.0.1"])
+        
+        // 创建 VPN Manager
+        let manager = NEVPNManager.shared()
+        manager.protocolConfiguration = vpnProtocol
+        manager.isEnabled = true
+        manager.isOnDemandEnabled = true
+        
+        // 保存配置以触发权限请求
+        manager.saveToPreferences { [weak self] error in
             if let error = error {
-                self?.showAlert(message: "加载VPN配置失败: \(error.localizedDescription)")
+                if (error as NSError).code == NEVPNError.configurationInvalid.rawValue {
+                    // 配置无效，可能是权限问题，尝试请求权限
+                    self?.showVPNPermissionAlert()
+                } else {
+                    self?.showAlert(message: "配置VPN失败: \(error.localizedDescription)")
+                }
                 return
             }
             
-            // 检查连接状态
-            let status = self?.vpnManager.connection.status
-            if status == .invalid {
-                self?.requestVPNPermissions()
+            // 配置成功，尝试启动 VPN
+            do {
+                try manager.connection.startVPNTunnel()
+            } catch {
+                self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
             }
         }
     }
     
-    private func requestVPNPermissions() {
-        let vpnManager = NEVPNManager.shared()
+    private func showVPNPermissionAlert() {
+        let alert = UIAlertController(
+            title: "需要VPN权限",
+            message: "此应用需要VPN权限来实现域名屏蔽功能。请在设置中允许VPN配置。",
+            preferredStyle: .alert
+        )
         
-        // 创建一个基本的 VPN 配置来触发权限请求
+        alert.addAction(UIAlertAction(title: "打开设置", style: .default) { _ in
+            if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(settingsURL)
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func updateVPNConfiguration() {
+        let manager = NEVPNManager.shared()
+        
+        // 创建 VPN 协议配置
         let vpnProtocol = NEVPNProtocolIKEv2()
         vpnProtocol.username = "vpn"
         vpnProtocol.serverAddress = "127.0.0.1"
+        vpnProtocol.remoteIdentifier = "DomainBlocker"
+        vpnProtocol.localIdentifier = "client"
+        vpnProtocol.useExtendedAuthentication = true
+        vpnProtocol.disconnectOnSleep = false
         
-        vpnManager.protocolConfiguration = vpnProtocol
-        vpnManager.isEnabled = true
+        // 配置 DNS 设置
+        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "1.0.0.1"])
+        dnsSettings.matchDomains = blockedDomains
         
-        vpnManager.saveToPreferences { [weak self] error in
+        // 配置按需规则
+        let rule = NEOnDemandRuleConnect()
+        rule.interfaceTypeMatch = .any
+        
+        // 应用配置
+        manager.protocolConfiguration = vpnProtocol
+        manager.onDemandRules = [rule]
+        manager.isOnDemandEnabled = true
+        manager.isEnabled = true
+        
+        // 保存配置
+        manager.saveToPreferences { [weak self] error in
             if let error = error {
-                self?.showAlert(message: "请求VPN权限失败: \(error.localizedDescription)")
+                if (error as NSError).code == NEVPNError.configurationInvalid.rawValue {
+                    self?.showVPNPermissionAlert()
+                } else {
+                    self?.showAlert(message: "保存VPN配置失败: \(error.localizedDescription)")
+                }
                 return
             }
             
-            // 尝试启动 VPN 以触发权限请求
+            // 启动 VPN
             do {
-                try vpnManager.connection.startVPNTunnel()
+                try manager.connection.startVPNTunnel()
+                self?.showAlert(message: "域名屏蔽规则已更新并启动")
             } catch {
-                self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
+                if (error as NSError).code == NEVPNError.configurationInvalid.rawValue {
+                    self?.showVPNPermissionAlert()
+                } else {
+                    self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -108,79 +171,10 @@ class ViewController: UIViewController {
         }
     }
     
-    private func updateVPNConfiguration() {
-        let vpnManager = NEVPNManager.shared()
-        
-        // 创建 VPN 协议配置
-        let vpnProtocol = NEVPNProtocolIKEv2()
-        vpnProtocol.username = "vpn"  // 使用一个默认用户名
-        vpnProtocol.passwordReference = nil  // 不使用密码
-        vpnProtocol.serverAddress = "127.0.0.1"  // 使用本地地址
-        vpnProtocol.remoteIdentifier = "DomainBlocker"
-        vpnProtocol.localIdentifier = "client"
-        vpnProtocol.useExtendedAuthentication = true
-        vpnProtocol.disconnectOnSleep = false
-        
-        // 配置 IKEv2 安全参数
-        vpnProtocol.ikeSecurityAssociationParameters.encryptionAlgorithm = .algorithmAES256GCM
-        vpnProtocol.ikeSecurityAssociationParameters.integrityAlgorithm = .SHA384
-        vpnProtocol.ikeSecurityAssociationParameters.diffieHellmanGroup = .group20
-        vpnProtocol.ikeSecurityAssociationParameters.lifetimeMinutes = 1440
-        
-        vpnProtocol.childSecurityAssociationParameters.encryptionAlgorithm = .algorithmAES256GCM
-        vpnProtocol.childSecurityAssociationParameters.integrityAlgorithm = .SHA384
-        vpnProtocol.childSecurityAssociationParameters.diffieHellmanGroup = .group20
-        vpnProtocol.childSecurityAssociationParameters.lifetimeMinutes = 1440
-        
-        // 配置 DNS 设置
-        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "1.0.0.1"])  // 使用 Cloudflare DNS
-        dnsSettings.matchDomains = blockedDomains
-        
-        // 配置按需规则
-        let rule = NEOnDemandRuleConnect()
-        rule.interfaceTypeMatch = .any
-        
-        // 应用配置
-        vpnManager.protocolConfiguration = vpnProtocol
-        vpnManager.onDemandRules = [rule]
-        vpnManager.isOnDemandEnabled = true
-        vpnManager.isEnabled = true
-        
-        // 设置本地 DNS 代理
-        if let tunnelProtocol = vpnManager.protocolConfiguration as? NETunnelProviderProtocol {
-            tunnelProtocol.providerConfiguration = [
-                "dns": ["1.1.1.1", "1.0.0.1"],
-                "blockedDomains": blockedDomains
-            ]
-        }
-        
-        // 保存配置
-        vpnManager.loadFromPreferences { [weak self] error in
-            if let error = error {
-                self?.showAlert(message: "加载VPN配置失败: \(error.localizedDescription)")
-                return
-            }
-            
-            vpnManager.saveToPreferences { [weak self] error in
-                if let error = error {
-                    self?.showAlert(message: "保存VPN配置失败: \(error.localizedDescription)")
-                    return
-                }
-                
-                // 启动 VPN
-                do {
-                    try vpnManager.connection.startVPNTunnel()
-                    self?.showAlert(message: "域名屏蔽规则已更新并启动")
-                } catch {
-                    self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
-                }
-            }
-        }
-    }
-    
     private func showAlert(message: String) {
         let alert = UIAlertController(title: "提示", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "确定", style: .default))
         present(alert, animated: true)
     }
+} 
 } 
