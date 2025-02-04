@@ -252,6 +252,12 @@
                 COPY_PHASE_STRIP = NO;
                 STRIP_INSTALLED_PRODUCT = NO;
                 STRIP_SWIFT_SYMBOLS = NO;
+                EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+                ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+                LD_RUNPATH_SEARCH_PATHS = (
+                    "$(inherited)",
+                    "@executable_path/Frameworks",
+                );
             };
             name = Release;
         };

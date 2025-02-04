@@ -38,22 +38,44 @@ jobs:
           BUILD_LIBRARIES_FOR_DISTRIBUTION=YES \
           ENABLE_BITCODE=NO \
           COPY_PHASE_STRIP=NO \
-          STRIP_INSTALLED_PRODUCT=NO
+          STRIP_INSTALLED_PRODUCT=NO \
+          STRIP_SWIFT_SYMBOLS=NO \
+          DEBUG_INFORMATION_FORMAT="dwarf-with-dsym"
           
         # 准备 IPA 文件结构
         cd build
         rm -rf Payload
         mkdir -p Payload
-        cp -r DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app Payload/
+        
+        # 复制应用和所有资源
+        cp -R DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app Payload/
+        
+        # 确保包含所有必要的框架和资源
+        mkdir -p Payload/DomainBlocker.app/Frameworks
+        cp -R DomainBlocker.xcarchive/Products/Applications/DomainBlocker.app/Frameworks/* Payload/DomainBlocker.app/Frameworks/ 2>/dev/null || true
+        
+        # 复制 Swift 运行时
+        SWIFT_LIBS_PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
+        mkdir -p Payload/DomainBlocker.app/Frameworks
+        cp -R "$SWIFT_LIBS_PATH"/*.dylib Payload/DomainBlocker.app/Frameworks/ 2>/dev/null || true
         
         # 确保文件权限正确
         chmod -R 755 Payload
+        find Payload -type f -name "*.dylib" -exec chmod 644 {} \;
+        find Payload -type f -name "*.framework" -exec chmod 644 {} \;
+        
+        # 显示文件结构
+        echo "App bundle contents:"
+        ls -la Payload/DomainBlocker.app/
+        echo "Frameworks:"
+        ls -la Payload/DomainBlocker.app/Frameworks/ 2>/dev/null || echo "No frameworks directory"
         
         # 创建 IPA
         rm -f DomainBlocker.ipa
         zip -qry DomainBlocker.ipa Payload
         
         # 验证 IPA 结构
+        echo "IPA contents:"
         unzip -l DomainBlocker.ipa
       
     - name: Upload IPA
