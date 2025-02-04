@@ -258,7 +258,7 @@
                 ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
                 CODE_SIGN_STYLE = Manual;
                 CURRENT_PROJECT_VERSION = 1;
-                DEVELOPMENT_TEAM = "";
+                DEVELOPMENT_TEAM = "V22J5U2YDA";
                 GENERATE_INFOPLIST_FILE = YES;
                 INFOPLIST_FILE = DomainBlocker/Info.plist;
                 INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
