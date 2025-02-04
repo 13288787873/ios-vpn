@@ -25,16 +25,11 @@ jobs:
         <plist version="1.0">
         <dict>
             <key>method</key>
-            <string>ad-hoc</string>
-            <key>teamID</key>
-            <string>TEMP123456</string>
+            <string>development</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
             <key>compileBitcode</key>
             <false/>
-            <key>provisioningProfiles</key>
-            <dict>
-                <key>com.example.DomainBlocker</key>
-                <string>DomainBlocker Ad Hoc</string>
-            </dict>
         </dict>
         </plist>
         EOF
@@ -52,11 +47,11 @@ jobs:
           -configuration Release \
           -sdk iphoneos \
           -archivePath $PWD/build/DomainBlocker.xcarchive \
-          DEVELOPMENT_TEAM="TEMP123456" \
+          CODE_SIGN_STYLE=Automatic \
+          CODE_SIGN_IDENTITY="Apple Development" \
+          DEVELOPMENT_TEAM="" \
           PROVISIONING_PROFILE_SPECIFIER="" \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO \
+          -allowProvisioningUpdates \
           archive
           
         # 导出IPA
@@ -64,10 +59,7 @@ jobs:
           -archivePath $PWD/build/DomainBlocker.xcarchive \
           -exportPath $PWD/build \
           -exportOptionsPlist exportOptions.plist \
-          DEVELOPMENT_TEAM="TEMP123456" \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+          -allowProvisioningUpdates
       
     - name: Upload IPA
       uses: actions/upload-artifact@v4
