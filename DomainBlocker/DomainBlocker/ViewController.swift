@@ -61,10 +61,6 @@ class ViewController: UIViewController {
         vpnProtocol.useExtendedAuthentication = true
         vpnProtocol.disconnectOnSleep = false
         
-        // 配置 DNS 设置
-        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "1.0.0.1"])
-        vpnProtocol.dnsSettings = dnsSettings
-        
         // 配置 IKEv2 安全参数
         vpnProtocol.ikeSecurityAssociationParameters.encryptionAlgorithm = .algorithmAES256GCM
         vpnProtocol.ikeSecurityAssociationParameters.integrityAlgorithm = .SHA384
@@ -86,6 +82,16 @@ class ViewController: UIViewController {
         let connectRule = NEOnDemandRuleConnect()
         connectRule.interfaceTypeMatch = .any
         manager.onDemandRules = [connectRule]
+        
+        // 创建 DNS 代理配置
+        let providerProtocol = NETunnelProviderProtocol()
+        providerProtocol.providerConfiguration = [
+            "dns": ["1.1.1.1", "1.0.0.1"],
+            "dnsSettings": [
+                "servers": ["1.1.1.1", "1.0.0.1"],
+                "matchDomains": []
+            ]
+        ]
         
         // 先加载现有配置
         manager.loadFromPreferences { [weak self] error in
@@ -150,9 +156,15 @@ class ViewController: UIViewController {
         vpnProtocol.useExtendedAuthentication = true
         vpnProtocol.disconnectOnSleep = false
         
-        // 配置 DNS 设置
-        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "1.0.0.1"])
-        dnsSettings.matchDomains = blockedDomains
+        // 创建 DNS 代理配置
+        let providerProtocol = NETunnelProviderProtocol()
+        providerProtocol.providerConfiguration = [
+            "dns": ["1.1.1.1", "1.0.0.1"],
+            "dnsSettings": [
+                "servers": ["1.1.1.1", "1.0.0.1"],
+                "matchDomains": blockedDomains
+            ]
+        ]
         
         // 配置按需规则
         let rule = NEOnDemandRuleConnect()
