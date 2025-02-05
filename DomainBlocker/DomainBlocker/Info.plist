@@ -41,6 +41,13 @@
     </array>
     <key>NSVPNConfigurationUsageDescription</key>
     <string>此应用需要VPN权限来实现域名屏蔽功能。请点击"允许"以继续。</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>需要访问本地网络以配置VPN服务</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_vpn._tcp</string>
+        <string>_vpn._udp</string>
+    </array>
     <key>UIRequiredDeviceCapabilities</key>
     <array>
         <string>arm64</string>

@@ -58,6 +58,23 @@ class ViewController: UIViewController {
         vpnProtocol.serverAddress = "127.0.0.1"
         vpnProtocol.remoteIdentifier = "DomainBlocker"
         vpnProtocol.localIdentifier = "client"
+        vpnProtocol.useExtendedAuthentication = true
+        vpnProtocol.disconnectOnSleep = false
+        
+        // 配置 DNS 设置
+        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "1.0.0.1"])
+        vpnProtocol.dnsSettings = dnsSettings
+        
+        // 配置 IKEv2 安全参数
+        vpnProtocol.ikeSecurityAssociationParameters.encryptionAlgorithm = .algorithmAES256GCM
+        vpnProtocol.ikeSecurityAssociationParameters.integrityAlgorithm = .SHA384
+        vpnProtocol.ikeSecurityAssociationParameters.diffieHellmanGroup = .group20
+        vpnProtocol.ikeSecurityAssociationParameters.lifetimeMinutes = 1440
+        
+        vpnProtocol.childSecurityAssociationParameters.encryptionAlgorithm = .algorithmAES256GCM
+        vpnProtocol.childSecurityAssociationParameters.integrityAlgorithm = .SHA384
+        vpnProtocol.childSecurityAssociationParameters.diffieHellmanGroup = .group20
+        vpnProtocol.childSecurityAssociationParameters.lifetimeMinutes = 1440
         
         // 创建 VPN Manager
         let manager = NEVPNManager.shared()
@@ -65,23 +82,40 @@ class ViewController: UIViewController {
         manager.isEnabled = true
         manager.isOnDemandEnabled = true
         
-        // 保存配置以触发权限请求
-        manager.saveToPreferences { [weak self] error in
+        // 配置按需规则
+        let connectRule = NEOnDemandRuleConnect()
+        connectRule.interfaceTypeMatch = .any
+        manager.onDemandRules = [connectRule]
+        
+        // 先加载现有配置
+        manager.loadFromPreferences { [weak self] error in
             if let error = error {
-                if (error as NSError).code == NEVPNError.configurationInvalid.rawValue {
-                    // 配置无效，可能是权限问题，尝试请求权限
-                    self?.showVPNPermissionAlert()
-                } else {
-                    self?.showAlert(message: "配置VPN失败: \(error.localizedDescription)")
-                }
+                self?.showAlert(message: "加载VPN配置失败: \(error.localizedDescription)")
                 return
             }
             
-            // 配置成功，尝试启动 VPN
-            do {
-                try manager.connection.startVPNTunnel()
-            } catch {
-                self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
+            // 保存配置以触发权限请求
+            manager.saveToPreferences { [weak self] error in
+                if let error = error {
+                    if (error as NSError).code == NEVPNError.configurationInvalid.rawValue {
+                        // 配置无效，可能是权限问题，尝试请求权限
+                        self?.showVPNPermissionAlert()
+                    } else {
+                        self?.showAlert(message: "配置VPN失败: \(error.localizedDescription)")
+                    }
+                    return
+                }
+                
+                // 配置成功，尝试启动 VPN
+                do {
+                    try manager.connection.startVPNTunnel()
+                } catch {
+                    if (error as NSError).code == NEVPNError.configurationInvalid.rawValue {
+                        self?.showVPNPermissionAlert()
+                    } else {
+                        self?.showAlert(message: "启动VPN失败: \(error.localizedDescription)")
+                    }
+                }
             }
         }
     }
